@@ -387,12 +387,5 @@ python tests/deep_audit.py
 
 ---
 
-## License
-
-MIT License — free to use, modify, and distribute.
 
 ---
-
-## Author
-
-**Dracula-5** · [github.com/Dracula-5](https://github.com/Dracula-5)
