@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroFeed — AI News</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+
+      <!-- ░░ ONBOARDING ░░ -->
+      <section class="panel onboarding" id="onboarding">
+        <div class="ob-hero">
+          <div class="ob-badge">AI · RL · Real-time</div>
+          <h1>News that reads <em>you</em>.</h1>
+          <p class="lede">A Dueling DDQN agent adapts your feed after every article — guided by attention, emotion, and live webcam signals.</p>
+          <ul class="feature-list">
+            <li><span class="feat-dot green"></span>Webcam face &amp; gaze tracking</li>
+            <li><span class="feat-dot teal"></span>HITL reinforcement learning</li>
+            <li><span class="feat-dot blue"></span>Real-time preference updates</li>
+            <li><span class="feat-dot amber"></span>Mood-aware article scoring</li>
+          </ul>
+        </div>
+
+        <form id="onboardForm" class="form">
+          <div class="form-section-label">Identity</div>
+          <label>
+            User ID
+            <input name="user_id" placeholder="Leave blank to auto-generate" list="userOptions" />
+            <datalist id="userOptions"></datalist>
+          </label>
+
+          <div class="form-section-label">Interests</div>
+          <div id="interestOptions" class="checkbox-grid"></div>
+
+          <div class="form-section-label">Context</div>
+          <div class="grid-2">
+            <label>
+              Mood
+              <input name="mood" placeholder="focused, curious…" value="curious" />
+            </label>
+            <label>
+              Minutes available
+              <input name="time_available" type="number" value="12" min="1" max="120" />
+            </label>
+          </div>
+          <div class="grid-2">
+            <label>
+              Time of day
+              <select name="time_of_day">
+                <option>morning</option>
+                <option>afternoon</option>
+                <option>evening</option>
+                <option>late_night</option>
+              </select>
+            </label>
+            <label>
+              Location
+              <input name="location" value="India" />
+            </label>
+          </div>
+
+          <div class="form-section-label">Tuning</div>
+          <label>
+            Exploration preference
+            <div class="slider-row">
+              <span class="slider-lo">Focused</span>
+              <input name="exploration_preference" type="range" min="0" max="1" step="0.05" value="0.25" />
+              <span class="slider-hi">Exploratory</span>
+            </div>
+          </label>
+          <label>
+            Sample click category
+            <input name="sample_click" placeholder="technology" value="technology" />
+          </label>
+
+          <button type="submit" class="btn-primary btn-lg">Launch feed →</button>
+        </form>
+      </section>
+
+      <!-- ░░ FEED ░░ -->
+      <section class="feed hidden" id="feed">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+          <div class="topbar-left">
+            <div class="logo-mark">NF</div>
+            <div>
+              <p class="eyebrow" id="userLabel">demo_user</p>
+              <h2>Adaptive feed</h2>
+            </div>
+          </div>
+          <div class="topbar-right">
+            <div class="stat-pill">
+              <span class="pill-label">Time</span>
+              <span id="timer" class="pill-val">0.0s</span>
+            </div>
+            <div class="stat-pill attn-pill">
+              <span class="pill-label">Attention</span>
+              <span id="attention" class="pill-val accent">0.50</span>
+            </div>
+            <div class="stat-pill">
+              <span class="pill-label">Interaction</span>
+              <span id="interactionLive" class="pill-val">0.50</span>
+            </div>
+            <div class="state-badge" id="attentionStatus">camera idle</div>
+            <button id="webcamBtn" class="btn-cam" type="button">
+              <span class="cam-dot"></span> Start webcam
+            </button>
+            <div class="user-menu" id="userMenu">
+              <button class="btn-user" id="userMenuBtn" type="button">
+                <span id="userEmail">User</span> ▼
+              </button>
+              <div class="menu-dropdown" id="menuDropdown" style="display: none;">
+                <a href="#" id="logoutLink" class="menu-item">Logout</a>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- MAIN GRID -->
+        <div class="main-grid">
+
+          <!-- LEFT COLUMN: Article + Controls -->
+          <div class="left-col">
+
+            <!-- News card -->
+            <article class="news-card" id="card">
+              <div class="card-top">
+                <span id="category" class="chip chip-category">category</span>
+                <span id="decision" class="chip chip-decision">HITL</span>
+              </div>
+              <h3 id="headline">Ready when you are.</h3>
+              <p id="abstract">Onboard to fetch your first recommendations.</p>
+              <a id="url" href="#" target="_blank" rel="noreferrer" class="read-link hidden">Read full article ↗</a>
+              <div class="score-strip">
+                <div class="score-item">
+                  <span class="score-label">Score</span>
+                  <span id="score" class="score-val">0.00</span>
+                </div>
+                <div class="score-item">
+                  <span class="score-label">Q-value</span>
+                  <span id="q-val" class="score-val">0.00</span>
+                </div>
+                <div class="score-item">
+                  <span class="score-label">Similarity</span>
+                  <span id="sim-val" class="score-val">0.00</span>
+                </div>
+                <div class="score-item">
+                  <span class="score-label">Trending</span>
+                  <span id="trend-val" class="score-val">0.00</span>
+                </div>
+                <!-- hidden span kept for JS compat -->
+                <span id="why" class="hidden">q 0.00 - sim 0.00 - trend 0.00</span>
+              </div>
+
+              <!-- Poll overlay — shown after 20 s of reading -->
+              <div id="pollPrompt" class="poll hidden">
+                <p>Do you like <strong>&ldquo;<span id="pollArticleName">this article</span>&rdquo;</strong>?</p>
+                <div class="poll-btns">
+                  <button id="pollYes" class="btn-ghost">Yes 👍</button>
+                  <button id="pollNo" class="btn-danger">No 👎</button>
+                </div>
+              </div>
+
+              <!-- Attention bars -->
+              <div class="attn-bars">
+                <div class="abar" id="bar-brightness">
+                  <span class="abar-name">Brightness</span>
+                  <div class="abar-track"><div class="abar-fill fill-amber"></div></div>
+                  <span id="brightness" class="abar-val">50</span>
+                </div>
+                <div class="abar" id="bar-eye">
+                  <span class="abar-name">Eye open</span>
+                  <div class="abar-track"><div class="abar-fill fill-teal"></div></div>
+                  <span id="eyeOpen" class="abar-val">70</span>
+                </div>
+                <div class="abar" id="bar-ear">
+                  <span class="abar-name">EAR</span>
+                  <div class="abar-track"><div class="abar-fill fill-blue"></div></div>
+                  <span id="eyeEar" class="abar-val">0.25</span>
+                </div>
+                <div class="abar" id="bar-eyemove">
+                  <span class="abar-name">Eye move</span>
+                  <div class="abar-track"><div class="abar-fill fill-purple"></div></div>
+                  <span id="eyeMove" class="abar-val">0.0</span>
+                </div>
+                <div class="abar" id="bar-movement">
+                  <span class="abar-name">Still</span>
+                  <div class="abar-track"><div class="abar-fill fill-green"></div></div>
+                  <span id="movement" class="abar-val">20</span>
+                </div>
+                <div class="abar" id="bar-energy">
+                  <span class="abar-name">Energy</span>
+                  <div class="abar-track"><div class="abar-fill fill-orange"></div></div>
+                  <span id="energy" class="abar-val">64</span>
+                </div>
+                <div class="abar" id="bar-gaze">
+                  <span class="abar-name">Gaze</span>
+                  <div class="abar-track"><div class="abar-fill fill-teal"></div></div>
+                  <span id="gaze" class="abar-val">0.58</span>
+                </div>
+                <div class="abar" id="bar-distance">
+                  <span class="abar-name">Distance</span>
+                  <div class="abar-track"><div class="abar-fill fill-gray"></div></div>
+                  <span id="distance" class="abar-val">0.5</span>
+                </div>
+                <!-- text-only metrics -->
+                <div class="abar abar-text">
+                  <span class="abar-name">Head move</span>
+                  <span id="headMovement" class="abar-val mono">0.0</span>
+                </div>
+                <div class="abar abar-text">
+                  <span class="abar-name">Dist OK</span>
+                  <span id="distanceOk" class="abar-val mono">—</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Controls -->
+            <div class="controls">
+              <button id="skipBtn" class="btn-dislike">✕ Dislike</button>
+              <button id="likeBtn" class="btn-like">♥ Like</button>
+              <button id="nextBtn" class="btn-next">→ Next</button>
+              <label class="time-label">
+                <span>Manual time</span>
+                <input id="manualTime" type="number" min="0" step="0.5" placeholder="auto" />
+              </label>
+            </div>
+
+          </div>
+
+          <!-- RIGHT COLUMN: Camera + User profile -->
+          <div class="right-col">
+
+            <!-- Camera panel -->
+            <div class="camera-panel" id="cameraPanel">
+              <div class="camera-header">
+                <span class="eyebrow">Face tracking</span>
+                <span id="cameraMessage" class="cam-msg">Not started</span>
+              </div>
+              <div class="camera-wrap">
+                <img id="cameraFeed" src="" alt="Face tracking" style="display:none;" />
+                <div id="cameraPlaceholder" class="cam-placeholder">
+                  <div class="cam-icon">⬡</div>
+                  <span>Click Start webcam<br/>to enable face tracking</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- User profile -->
+            <div class="profile-card">
+              <div class="profile-header">
+                <span class="eyebrow">User profile</span>
+                <span id="userMoodDisplay" class="mood-badge">—</span>
+              </div>
+              <div class="profile-id" id="userIdDisplay">—</div>
+              <div class="profile-interests" id="userInterestsDisplay">—</div>
+              <div class="profile-stats">
+                <div class="pstat">
+                  <span class="pstat-label">Attention</span>
+                  <span id="userAttentionDisplay" class="pstat-val">—</span>
+                </div>
+                <div class="pstat">
+                  <span class="pstat-label">Interaction</span>
+                  <span id="userInteractionDisplay" class="pstat-val">—</span>
+                </div>
+                <div class="pstat">
+                  <span class="pstat-label">Exploration</span>
+                  <span id="userExplorationDisplay" class="pstat-val">—</span>
+                </div>
+              </div>
+              <div class="known-users-section">
+                <span class="eyebrow">Known users</span>
+                <p id="knownUsers" class="known-list">loading…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUEUE -->
+        <section class="queue-section">
+          <div class="queue-head">
+            <h3>Up next</h3>
+            <button id="refreshBtn" class="btn-ghost btn-sm">↺ Refresh queue</button>
+          </div>
+          <ol id="queueList" class="queue-list"></ol>
+        </section>
+
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
